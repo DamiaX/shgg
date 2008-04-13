@@ -1,0 +1,187 @@
+sHGG - manual (do wersji  0.6 / 13.04.2008)
+-------------------------------------------
+www.hakger.xorg.pl
+
+1. Opis
+=======
+
+sHGG to komponent do obs³ugi Gadu-gadu w jêzyku C# (œrodowisko .NET). Umo¿liwia miêdzy innymi po³¹czenie z serwerem, ustawianie statusu i opisu, wysy³anie wiadomoœci, obrazków, listê kontaktów, katalog publiczny, us³ugi obs³ugi konta itd.
+
+
+2. Licencja
+===========
+
+Komponent jest w pe³ni darmowy - mo¿na go dowolnie u¿ywaæ, kopiowaæ, rozpowszechniaæ, powielaæ. Prosimy nie modyfikowaæ kodu Ÿród³owego.
+
+
+3. Manual
+=========
+
+- po³¹czenie z serwerem GG
+--------------------------
+
+Aby po³¹czyæ siê z serwerem GG, wystarczy zbudowaæ obiekt sHGG, ustawiæ numer GG, has³o oraz wywo³aæ metodê GGLogin(). Dla u³atwienia prawie wszystkie metody obs³ugi Gadu-gadu zaczynaj¹ siê od liter "GG". Poni¿ej fragment kodu ³¹cz¹cy z serwerem, ze statusem "dostêpny" na dzieñ dobry.
+
+  sharpGG = new sHGG();
+  sharpGG.GGNumber = "123456"; // numer GG
+  sharpGG.GGPassword = "AlaMaKota"; // has³o GG
+  sharpGG.GGStatus = sHGG.GGStatusType.Available; // status na start
+  sharpGG.GGLogin(); // zalogowanie
+
+Komponent znajduje siê w przestrzeni nazw HAKGERSoft, dlatego zaleca siê na pocz¹tku modu³u dodaæ deklaracjê:
+
+  using HAKGERSoft;
+
+Aby siê wylogowaæ:
+
+  sharpGG.GGLogout();
+
+Gdyby nie uda³o siê po³¹czyæ - byæ mo¿e serwer GG jest niedostêpny. Wtedy nale¿y siê pos³u¿yæ metod¹ GGGetActiveServer(), która zwraca aktualnie czynny adres serwera - przypisujemy go do w³aœciwoœci GGServerAddress.
+
+
+- status i opis GG
+------------------
+
+Aby zmieniæ status GG wystarczy zmieniæ w³aœciwoœæ GGStatus. Przyk³ad:
+
+  sharpGG.GGStatus = sHGG.GGStatusType.Busy; // zmienia status na "zajêty"
+
+Pozosta³e opisy to: Invisible - niewidoczny, Available - dostêpny, NotAvailable - niedostêpny (równoznaczny z wylogowaniem).
+
+Aby zmieniæ opis GG:
+
+sharpGG.GGDescription = "nowy opis";
+
+Zmiany statusu i opisu dzia³aj¹, gdy jest siê zalogowanym.
+
+
+- wysy³anie i odbieranie wiadomoœci
+-----------------------------------
+
+Gdy wys³ano nam wiadomoœæ, wykona siê zdarzenie GGMessageReceive (w parametrach mo¿na znajœæ miêdzy innymi numer GG osoby, która wys³a³a wiadomoœæ, czas wiadomoœci oraz treœæ.
+
+Aby wys³aæ wiadomoœæ u¿ywamy prze³adowanej metody GGSendMessage(). Przyk³ady:
+
+  - wys³anie zwyk³ej wiadomoœci do jednego numeru GG
+
+    sharpGG.GGSendMessage(123456, "tresc wiadomosci"); // gdzie 123456 to numer GG adresata
+
+  - wys³anie wiadomoœci do kilku osób (konferencja)
+
+    int[] rec = new int[2];
+    rec[0] = 123456; // numer pierwszego adresata
+    rec[1] = 789123; // numer drugiego adresata
+    sharpGG.GGSendMessage(rec, "tresc wiadomosci");
+
+  - wys³anie sformatowanej wiadomoœci
+
+    Poni¿ej przyk³ad kodu, który wysy³a wiadomoœæ - podkreœlenie i kolor zielony od trzeciego znaku:
+
+    SortedDictionary<short, string> format = new SortedDictionary<short, string>() { { 3, "<u><green>" } };
+    sharpGG.GGSendMessage(123456, "tresc wiadomosci", format);
+
+    Pozosta³e tagi u¿ywane do formatowania to:
+    <u> - podkreœlenie
+    <b> - pogrubienie
+    <i> - pochylenie
+    <n> - brak formatowania
+
+    Kolory:
+    <black>, <blue>, <red>, <green>, <purple>,
+    <navy>, <gray>, <gold>, <lightblue>,  <lemon>,
+    <silver>, <orange>, <maroon>, <pistachio>,
+    <lightpurple>, <lightpink>,, <pink>, <aqua>
+
+
+- wysy³anie obrazków
+-----------------------------------
+
+Nale¿y u¿yæ metody GGSendImage().
+Przyk³ad:
+
+sharpGG.GGSendImage(12345, @"C:\logo.jpg");
+  gdzie:
+    12345 - adresat
+    "C:\logo.jpg" - œcie¿ka do pliku z obrazkiem
+
+Metoda jest wielokrotnie przeci¹¿ona - mo¿na wys³aæ obrazek bezpoœrednio z MemoryStream, b¹dŸ te¿ dodaæ wiadomoœæ do obrazka.
+
+
+- lista kontaktów
+------------------
+
+Komponent posiada wewnêtrzn¹ listê kontaktów w postaci generycznej listy (elementy typu GGUser). Gdy status osoby na liœcie kontaktów siê zmienia - zachodz¹ odpowiednie zdarzenia.
+
+Aby dodaæ now¹ osoby do listy:
+
+  GGUser newUser = new GGUser();
+  newUser.GGNick = "waldek"; // nick
+  newUser.GGNumber = 987654321; // numer GG osoby
+  sharpGG.Users.Add(newUser);
+
+Mo¿na te¿ dodaæ sam numer GG osoby (funkcja Add jest prze³adowana kilkakrotnie). Jest równie¿ dostêpna funkcja, która dodaje ca³¹ tablicê numerów GG do listy. Przyk³ad:
+
+sharpGG.Users.Add(new int[] { 123456, 234567, 45678 }, true))
+
+Ostatni parametr "true" decyduje czy funkcja ma dzia³aæ jak transakcja. To znaczy: jeœli jest wartoœæ "true" to albo wszystkie numery w tablicy siê dodadz¹ do listy, albo ¿aden (np. w przypadku gdyby jakiœ numer ju¿ by³ dodany). Ustawiaj¹c parametr na "false" funkcja doda te numery, które mo¿e dodaæ ignoruj¹c te, które ju¿ s¹ na liœcie.
+
+Oprócz pól GGNick czy GGNumber, klasa GGUser posiada te¿ inne, które mo¿na wykorzystaæ : np. Phone, Mobile czy te¿ Friend (Je¿eli pole ma wartoœæ "false", to serwer ukrywa twój status przy w³¹czonym trybie FriendsMask - standardowo "true"). Pola GGStatus oraz Description opisuj¹ aktualny status / opis osoby.
+
+Usuwanie osoby z listy:
+  Users.Remove().
+
+Usuniêcie ca³ej listy kontaktów:
+  Users.Clear().
+
+Zablokowanie osoby (ignor):
+  Users.Block(123456);
+
+Osoby na liœcie kontaktów s¹ automatycznie sortowani tak jak w kliencie GG.
+
+
+- obs³uga konta
+------------------
+
+Aby obs³ugiwaæ konto najpierw nale¿y pobraæ token:
+  GGGetToken(out tokenid, out tokenurl);
+
+Funkcja zwraca Image z tokenem. W zmiennej tokenid znajduje siê numer tokenu, który nale¿y podaæ do funkcji obs³ugi konta. Jeden token mo¿na wykorzystaæ tylko do jednej funkcji.
+
+Rejestracja konta:
+  GGRegisterAccount("maciek@wp.pl", "haslo", tokenId, tokenValue)
+
+tokenId jest numerem tokenu, natomiast tokenValue - wartoœci¹ zczytan¹ z tokenu. Pozosta³ych chyba nie trzeba t³umaczyæ. Funkcja od razu zwraca nowo otrzymany numer GG
+
+Usuniêcie konta:
+  GGDeleteAccount(123456, "haslo", tokenId, tokenValue); // 123456 to numer GG
+Funkcja zwraca TRUE jeœli operacja powiedzie siê
+
+Podobnie pozosta³e funkcje:
+ GGChangePassword(...) // zmiena has³a
+ GGChangeEmail(...) // zmiana adresu e-mail
+
+
+===============================================================
+
+FAQ:
+========
+
+* "Nie mogê zbudowaæ Ÿród³a - nie mo¿e znajœæ NUnit.Framework"?
+  - najwidoczniej nie posiadasz NUnit`a do testów jednostkowych. W takim przypadku usuniêcie ca³ego katalogu "Tests" oraz referencji do
+    nunit.framework za³atwi sprawê (shgg --> references)
+
+* "Mam Visual Studio 2005 i dalej nie mogê zbudowaæ kodu (wystêpuj¹ b³êdy sk³adni)"?
+  - potrzebujesz Visual Studio 2008 (na dowolnej licencji). VS2005 nie jest w stanie zbudowaæ kodu!
+
+* Kod siê ³adnie zbudowa³, ale nie uda³o mi siê nigdy po³¹czyæ"?
+  Przyczyn mo¿e byæ wiele:
+  - sprawdŸ jeszcze raz czy numer GG oraz has³o s¹ poprawne!
+  - sprawdŸ czy jesteœ zalogowany (na start domyœlnie ustawiany jest status niewidoczny i tak naprawde nie widzisz czy siê zalogowa³eœ - zmieñ status na dostêpny aby mieæ pewnoœæ)
+  - byæ mo¿e serwer GG jest nieaktualny. W takim przypadku najlepiej logowaæ siê tak:
+
+  sharpGG.GGLogin(sharpGG.GGGetActiveServer());
+  (czyli po uprzednim pobraniu aktualnego adresu serwera GG)
+
+
+-------------------------------------------------------------
+shgg. Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
