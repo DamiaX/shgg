@@ -27,19 +27,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-namespace HAKGERSoft  {
+namespace HAKGERSoft {
 
     /// <summary>
     /// Lista kontaktów
     /// </summary>
-    public sealed class GGUsers : List<GGUser> {
+    public sealed class GGUsers :List<GGUser> {
         private sHGG owner;
 
         /// <summary>
         /// Konstruktor listy kontaktów
         /// </summary>
         /// <param name="owner">obiekt typu sHGG (właściciel listy)</param>
-        public GGUsers(sHGG owner): base() {
+        public GGUsers(sHGG owner)
+            : base() {
             this.owner = owner;
         }
 
@@ -51,8 +52,9 @@ namespace HAKGERSoft  {
             if (this.Contains(user))
                 return;
             base.Add(user);
-            owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, false);
-            this.UserAddedHandler(user); 
+            if (owner.IsGGLogged)
+                owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, false);
+            this.UserAddedHandler(user);
         }
 
         /// <summary>
@@ -60,7 +62,12 @@ namespace HAKGERSoft  {
         /// </summary>
         /// <param name="GGnumber">numer GG osoby</param>
         public void Add(int GGnumber) {
-            this.Add(new GGUser() { GGNumber = GGnumber });
+            GGUser user = new GGUser();
+            user.GGNumber = GGnumber;
+            this.Add(user);
+            if (owner.IsGGLogged)
+                owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, false);
+            this.UserAddedHandler(user);
         }
 
         /// <summary>
@@ -70,15 +77,15 @@ namespace HAKGERSoft  {
         /// <param name="transaction">transakcja gdy wartość jest równa TRUE - jeśli
         /// któryś z numerów jest już na liście, nie doda żadnego numeru</param>
         /// <returns>zwraca TRUE jeśli uda się dodać nowe osoby</returns>
-        public bool Add(Dictionary<string,int> users, bool transaction) {
-            if (users==null)
+        public bool Add(Dictionary<string, int> users, bool transaction) {
+            if (users == null)
                 return false;
             List<GGUser> transact = new List<GGUser>();
             IDictionaryEnumerator userEnum = users.GetEnumerator();
             while (userEnum.MoveNext()) {
-                if ((this.Contains((int)userEnum.Value) || transact.Exists(x => x.GGNumber==(int)userEnum.Value)) & transaction)
+                if ((this.Contains((int) userEnum.Value) || transact.Exists(x => x.GGNumber == (int) userEnum.Value)) & transaction)
                     return false; // rollback 
-                transact.Add(new GGUser() { GGNick = (string)userEnum.Key, GGNumber = (int)userEnum.Value });
+                transact.Add(new GGUser() { GGNick = (string) userEnum.Key, GGNumber = (int) userEnum.Value });
             }
             transact.ForEach(user => this.Add(user));
             return true;
@@ -94,7 +101,7 @@ namespace HAKGERSoft  {
         public bool Add(int[] GGnumbers, bool transaction) {
             if (GGnumbers == null || GGnumbers.Length == 0)
                 return false;
-            Dictionary<string,int> newUsers = new Dictionary<string,int>();
+            Dictionary<string, int> newUsers = new Dictionary<string, int>();
             int i = 1;
             foreach (int number in GGnumbers)
                 newUsers.Add("User " + i++.ToString(), number);
@@ -121,7 +128,7 @@ namespace HAKGERSoft  {
         /// <param name="GGnumber">numer GG osoby</param>
         /// <returns>zwraca TRUE jeśli uda się usunąć osobę</returns>
         public bool Remove(int GGnumber) {
-            return this.Remove(new GGUser() {GGNumber = GGnumber} );
+            return this.Remove(new GGUser() { GGNumber = GGnumber });
         }
 
         /// <summary>
@@ -141,7 +148,7 @@ namespace HAKGERSoft  {
         /// <param name="GGNumber">numer GG osoby</param>
         /// <returns>zwraca TRUE jeśli osoba znajduje się na liście</returns>
         public bool Contains(int GGNumber) {
-            return this.Contains( new GGUser() { GGNumber = GGNumber });
+            return this.Contains(new GGUser() { GGNumber = GGNumber });
         }
 
         /// <summary>
@@ -168,11 +175,11 @@ namespace HAKGERSoft  {
         /// </summary>
         /// <param name="GGNumber">numer GG osoby, która ma być zablokowana</param>
         public void Block(int GGNumber) {
-            this.Block(new GGUser() { GGNumber = GGNumber } );
+            this.Block(new GGUser() { GGNumber = GGNumber });
         }
 
         //public void ExportToGGServer() {
-            
+
         //}
 
         /// <summary>
@@ -181,7 +188,45 @@ namespace HAKGERSoft  {
         /// <param name="filePath">Ścieżka do pliku</param>
         public void ExportToFile(string filePath) {
             byte[] usersBin = this.DeserializeUserlist();
-            this.WriteStream(usersBin, filePath); 
+            this.WriteStream(usersBin, filePath);
+        }
+
+        public void ImportFromFile(string filePath) {
+            StreamReader sr = new StreamReader(filePath);
+            try {
+                while (!sr.EndOfStream) {
+                
+                    string[] input = sr.ReadLine().Split(new char[] { ';' });
+                    try {
+                        GGUser u = new GGUser();
+                        u.Name = input[0];
+                        u.LastName = input[1];
+                        u.GGNick = input[3];
+                        u.Mobile = input[4];
+                        if (!int.TryParse(input[6], out u.GGNumber))
+                            continue;
+                        u.Email = input[7];
+                        u.Friend = (input[11].Trim() == "1");
+                        u.Phone = input[12];
+
+                        base.Add(u);
+
+                        if (owner.IsGGLogged)
+                            owner.OutUsersNotify(u, sHGG.OUT_USERS_ADD_NOTIFY, false);
+
+                    } catch (IndexOutOfRangeException) {
+                        continue;
+                    }
+
+                }
+
+            } catch {
+                throw;
+            } finally {
+                sr.Close();
+
+                ListChangedHandler();
+            }
         }
 
         /// <summary>
@@ -201,8 +246,7 @@ namespace HAKGERSoft  {
         /// </summary>
         public event sHGG.GenericEventHandler<EventArgs> ListChanged;
 
-        public class UserEventArgs : EventArgs
-        {
+        public class UserEventArgs :EventArgs {
             public GGUser User;
         }
 
@@ -265,42 +309,40 @@ namespace HAKGERSoft  {
             try {
                 wstr = new FileStream(path, FileMode.Create, FileAccess.Write);
                 wstr.Write(data, 0, data.Length);
-            }
-            catch {
+            } catch {
                 this.owner.GGLogout();
                 throw;
-            }
-            finally {
+            } finally {
                 if (wstr != null)
-                    wstr.Close();      
+                    wstr.Close();
             }
         }
 
         private byte[] DeserializeUserlist() {
             string res = string.Empty;
-            foreach(GGUser user in this) {
-                res += string.Format("{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};{13};{14};\n", 
-                    user.Name, 
-                    user.LastName, 
-                    user.GGNick,
-                    user.GGNick,
-                    user.Mobile,
-                    string.Empty, // grupa
-                    user.GGNumber.ToString(), 
-                    user.Email, 
-                    "0", // dźwięki domyślne
-                    string.Empty, // brak scieżki do dźwięku
-                    "0", // brak specjalnego dźwięku dla wiadomości
-                    user.Friend ? "0" : "1", // znajomy
-                    string.Empty // telefon domowy
+            foreach (GGUser user in this) {
+                res += string.Format("{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};\n\r",
+                    user.Name,                  // 0
+                    user.LastName,              // 1
+                    user.GGNick,                // 2
+                    user.GGNick,                // 3
+                    user.Mobile,                // 4
+                    string.Empty,               // 5 (grupa)
+                    user.GGNumber.ToString(),   // 6 
+                    user.Email,                 // 7
+                    "0",                        // 8 (dźwięki domyślne)
+                    string.Empty,               // 9 (brak scieżki do dźwięku)
+                    "0",                        // 10 (brak specjalnego dźwięku dla wiadomości)
+                    user.Friend ? "0" : "1",    // 11 (znajomy)
+                    user.Phone                  // 12
                     );
             }
             if (string.IsNullOrEmpty(res))
                 return new byte[] { };
             return Encoding.GetEncoding(sHGG.DEFAULT_ENCODING).GetBytes(res);
         }
-       
- 
+
+
 
 
 

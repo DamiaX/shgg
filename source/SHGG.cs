@@ -38,9 +38,8 @@ namespace HAKGERSoft {
         }
         internal ConnectionMock mockObj;
         private System.Net.Sockets.TcpClient TcpEngine = null;
-        private Thread IdleEngine;
+        private Thread IdleEngine, pingTimer;
         private System.Net.Sockets.NetworkStream NetStream;
-        private System.Windows.Forms.Timer Timer;
         private SynchronizationContext syncContext = SynchronizationContext.Current;
 
         /// <summary>
@@ -259,7 +258,8 @@ namespace HAKGERSoft {
         /// </summary>
         public void GGLogout() {
             if (this.IsGGLogged) {
-                IdleEngine.Abort();
+                StopIdleEngine();
+                StopPing();
                 TcpEngine.Close();
                 IsGGLogged = false;
                 NetStream.Close();
