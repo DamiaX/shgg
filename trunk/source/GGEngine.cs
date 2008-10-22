@@ -62,26 +62,63 @@ namespace HAKGERSoft {
         }
 
         private BinaryWriter GetConnectionObj() {
-            return mock ? this.mockObj??new ConnectionMock() : new BinaryWriter(NetStream, Encoding.ASCII);
+            return mock ? this.mockObj ?? new ConnectionMock() : new BinaryWriter(NetStream, Encoding.ASCII);
         }
- 
+
         private void OutConnect(string serverAddress) {
             if (this.mock)
                 return;
             try {
                 TcpEngine = new System.Net.Sockets.TcpClient();
+                TcpEngine.ReceiveTimeout = 90;
                 TcpEngine.Connect(serverAddress, DEFAULT_GG_PORT);
-                IdleEngine = new Thread(new ThreadStart(WaitForData));
-                IdleEngine.Start();
-            }
-            catch {
+                StartIdleEngine();
+            } catch {
                 this.GGLogout();
                 throw;
-            }
-            finally {
+            } finally {
                 IsGGLogged = false;
             }
         }
+
+        #region PingTimer
+        private bool pingThreadRunning = false;
+        private bool stopPingThread = false;
+
+        internal void StartPing() {
+            if (pingThreadRunning)
+                throw new sHGGException("Ping thread is already running");
+            else {
+                pingTimer = new Thread(new ThreadStart(pingThread));
+                pingTimer.Name = "Ping timer";
+                stopPingThread = false;
+                pingTimer.Start();
+                while (!pingThreadRunning)
+                    Thread.Sleep(50);
+            }
+        }
+
+        internal void StopPing() {
+            while (pingThreadRunning)
+                stopPingThread = true;
+            pingTimer = null;
+        }
+
+        TimeSpan pingInterval = new TimeSpan(0, 4, 30);
+
+        private void pingThread() {
+            DateTime lastPing = DateTime.Now;
+            while (!stopPingThread) {
+                pingThreadRunning = true;
+                if (DateTime.Now - lastPing >= pingInterval) {
+                    OutPing(this, EventArgs.Empty);
+                    lastPing = DateTime.Now;
+                }
+                Thread.Sleep(1000);
+            }
+            pingThreadRunning = false;
+        }
+        #endregion
 
         internal void OutPing(object sender, EventArgs e) {
             stPing outPing = new stPing();
@@ -95,27 +132,27 @@ namespace HAKGERSoft {
             outLogin60.Header.Type = OUT_LOGIN60;
             outLogin60.Header.Size = 31;
             outLogin60.Number = Convert.ToUInt32(GGNumber);
-            outLogin60.Hash = (uint)Hash(GGPassword, seed);
+            outLogin60.Hash = (uint) Hash(GGPassword, seed);
             outLogin60.Status = STATUS_INVISIBLE;
             outLogin60.Version = DEFAULT_GG_VERSION;
-            outLogin60.Unknown1 = (byte)0x0;
+            outLogin60.Unknown1 = (byte) 0x0;
             outLogin60.LocalIp = 0;
             outLogin60.LocalPort = DEFAULT_LOCAL_PORT;
             outLogin60.ExternalIp = 0;
-            outLogin60.ExternalPort = (UInt16)0;
+            outLogin60.ExternalPort = (UInt16) 0;
             outLogin60.ImageSize = GGImageSize;
-            outLogin60.Unknown2 = (byte)0xbe;
+            outLogin60.Unknown2 = (byte) 0xbe;
             ForwardData(RawSerialize(outLogin60), false);
         }
 
         private void OutStatus() {
             stStatus outStatus = new stStatus();
-            outStatus.Header.Type = (uint)OUT_STATUS_CHANGE;
+            outStatus.Header.Type = (uint) OUT_STATUS_CHANGE;
             outStatus.Status = StatusCode(this.GGStatus, this.GGDescription);
             if (this.GGFriendsMask)
                 outStatus.Status |= FRIENDS_MASK;
             outStatus.Desc = GGDescription;
-            outStatus.Header.Size = 4 + (uint)GGDescription.Length;
+            outStatus.Header.Size = 4 + (uint) GGDescription.Length;
             if (GGDescription != string.Empty)
                 outStatus.Header.Size++;
 
@@ -128,38 +165,37 @@ namespace HAKGERSoft {
                 this.GGLogout();
         }
 
-        private void MessageEngine(int[] recs, string msg, SortedDictionary<short,string> msgFormat, bool conference) {
+        private void MessageEngine(int[] recs, string msg, SortedDictionary<short, string> msgFormat, bool conference) {
             try {
                 ValidateMessage(recs, msg, msgFormat, conference);
-            }
-            catch (sHGGException) {
+            } catch (sHGGException) {
                 this.GGLogout();
                 throw;
-            }   
+            }
             if (msg.Length > MAX_MESSAGE_SIZE)
                 msg = msg.Substring(0, MAX_MESSAGE_SIZE);
-            for (int i=0; i<recs.Length; i++)
-                BuildMessage(i, msg, recs, msgFormat, conference); 
+            for (int i = 0; i < recs.Length; i++)
+                BuildMessage(i, msg, recs, msgFormat, conference);
         }
 
         private void ValidateMessage(int[] recs, string msg, SortedDictionary<short, string> msgFormat, bool conference) {
-            if (recs==null || recs.Length==0)
+            if (recs == null || recs.Length == 0)
                 throw new sHGGException("Brak informacji do kogo wiadomość ma zostać wysłana!");
             foreach (int recipient in recs)
-                if (recipient <= 0) 
+                if (recipient <= 0)
                     throw new sHGGException(string.Format("Numer GG: {0} nie może być liczbą ujemną", recipient.ToString()));
         }
 
         private void ForwardMessage(stMsg outMsg, stMsgRecs outRecs, int[] recs, stMsgRich outMsgRich, List<stMsgRichFormat> outRichList, int listLength) {
-            outMsg.Header.Size = 13 + (uint)outMsg.Message.Length;
+            outMsg.Header.Size = 13 + (uint) outMsg.Message.Length;
             if (outRichList.Count > 0)
-                outMsg.Header.Size += (uint)listLength + 3;
+                outMsg.Header.Size += (uint) listLength + 3;
             if (recs.Length > 0)
-                outMsg.Header.Size += (uint)(5 + (4 * recs.Length));
+                outMsg.Header.Size += (uint) (5 + (4 * recs.Length));
             ForwardData(RawSerialize(outMsg), 21 + outMsg.Message.Length);
             if (recs.Length > 0) {
                 ForwardData(RawSerialize(outRecs), 5);
-                for (int i=0; i<recs.Length; i++)
+                for (int i = 0; i < recs.Length; i++)
                     ForwardData(RawSerialize(recs[i]));
             }
             if (outRichList.Count > 0) {
@@ -185,18 +221,18 @@ namespace HAKGERSoft {
         private stMsgRich BuildRichInfo(int listLength) {
             stMsgRich outMsgRich = new stMsgRich();
             outMsgRich.Flag = OUT_MESSAGE_RICH_FLAG;
-            outMsgRich.Length = (short)listLength;
+            outMsgRich.Length = (short) listLength;
             return outMsgRich;
         }
 
         private stMsgRecs BuildRecipientsInfo(int recsCount) {
             stMsgRecs outRecs = new stMsgRecs();
-            outRecs.Flag = (byte)OUT_MESSAGE_CONFERENCE_FLAG;
-            outRecs.RecipientsCount = (uint)recsCount;
+            outRecs.Flag = (byte) OUT_MESSAGE_CONFERENCE_FLAG;
+            outRecs.RecipientsCount = (uint) recsCount;
             return outRecs;
         }
 
-        internal List<stMsgRichFormat> BuildRichText(ref SortedDictionary<short,string> msgFormat, out int listLength) {
+        internal List<stMsgRichFormat> BuildRichText(ref SortedDictionary<short, string> msgFormat, out int listLength) {
             listLength = 0;
             if (msgFormat == null)
                 return new List<stMsgRichFormat>();
@@ -230,8 +266,8 @@ namespace HAKGERSoft {
             return outRichList;
         }
 
-        private void BuildMessage(int recNum, string msg, int[] recs, SortedDictionary<short,string> msgFormat, bool conference) {
-            stMsg outMsg = BuildMsgInfo((uint)recs[recNum], msg);
+        private void BuildMessage(int recNum, string msg, int[] recs, SortedDictionary<short, string> msgFormat, bool conference) {
+            stMsg outMsg = BuildMsgInfo((uint) recs[recNum], msg);
             stMsgRecs outMsgRecs = BuildRecipientsInfo(recs.Length);
             int listLength;
             List<stMsgRichFormat> outMsgRichFormat = BuildRichText(ref msgFormat, out listLength);
@@ -239,7 +275,7 @@ namespace HAKGERSoft {
             if (!conference)
                 ForwardMessage(outMsg, new stMsgRecs(), new int[0], outMsgRich, outMsgRichFormat, listLength);
             else
-                ForwardMessage(outMsg, outMsgRecs, recs, outMsgRich, outMsgRichFormat, listLength);         
+                ForwardMessage(outMsg, outMsgRecs, recs, outMsgRich, outMsgRichFormat, listLength);
         }
 
         private bool ImageEngine(int recipient, string msg, int imgPos, MemoryStream stream) {
@@ -263,8 +299,7 @@ namespace HAKGERSoft {
             string path;
             try {
                 path = GetImage(imagePath, out binary);
-            }
-            catch (sHGGException) {
+            } catch (sHGGException) {
                 this.GGLogout();
                 throw;
             }
@@ -276,10 +311,10 @@ namespace HAKGERSoft {
             if (!File.Exists(imagePath))
                 throw new sHGGException("Podana ścieżka nie istnieje!" + imagePath);
             if (Path.GetExtension(imagePath) != ".jpg")
-                throw new sHGGException("Podany plik nie jest obrazkiem!" + imagePath);  
+                throw new sHGGException("Podany plik nie jest obrazkiem!" + imagePath);
             binary = File.ReadAllBytes(imagePath);
             if (binary == null)
-                throw new sHGGException("Podany plik jest pusty!" + imagePath);  
+                throw new sHGGException("Podany plik jest pusty!" + imagePath);
             return Path.GetFileName(imagePath);
         }
 
@@ -305,7 +340,7 @@ namespace HAKGERSoft {
             ForwardData(RawSerialize(outUsersNotify), 13);
         }
 
-        internal void OutNoUsers()  {
+        internal void OutNoUsers() {
             stHeader outNoUsers = new stHeader();
             outNoUsers.Type = OUT_USERS_LIST_EMPTY;
             outNoUsers.Size = 0;
@@ -327,7 +362,7 @@ namespace HAKGERSoft {
         }
 
         private void BuildImage(int recNum, string msg, int imgPos, int[] recs, SortedDictionary<short, string> msgFormat, bool conference, byte[] bin, string path) {
-            stMsg outMsg = BuildMsgInfo((uint)recs[recNum], msg);
+            stMsg outMsg = BuildMsgInfo((uint) recs[recNum], msg);
             stMsgImage outMsgImage = BuildImageQuery(bin, outMsg.Recipient, path);
             int listLength;
             List<stMsgRichFormat> outMsgRichFormat = BuildRichImg(out listLength, imgPos);
@@ -340,17 +375,17 @@ namespace HAKGERSoft {
             listLength = 0;
             List<stMsgRichFormat> outRichList = new List<stMsgRichFormat>();
             stMsgRichFormat outMsgRich = new stMsgRichFormat();
-            outMsgRich.Position = (short)imgPos; // or 1 ??? // todo
-            outMsgRich.Font =  FONT_IMAGE;
+            outMsgRich.Position = (short) imgPos; // or 1 ??? // todo
+            outMsgRich.Font = FONT_IMAGE;
             listLength += 13;
             outRichList.Add(outMsgRich);
             return outRichList;
         }
 
         private void ForwardImageRequest(stMsg outMsg, stMsgRich outMsgRich, List<stMsgRichFormat> outRichList, int listLength, stMsgImage image) {
-            outMsg.Header.Size = 13 + (uint)outMsg.Message.Length;
+            outMsg.Header.Size = 13 + (uint) outMsg.Message.Length;
             if (outRichList.Count > 0)
-                outMsg.Header.Size += (uint)listLength + 3;
+                outMsg.Header.Size += (uint) listLength + 3;
             ForwardData(RawSerialize(outMsg), 21 + outMsg.Message.Length);
             if (outRichList.Count > 0) {
                 ForwardData(RawSerialize(outMsgRich), 3);
@@ -380,12 +415,12 @@ namespace HAKGERSoft {
             imageBuffEl buffEl = imageBuff.popBinFromBuff(outMsg.Recipient);
             byte[][] imagePack = sHGG.ArrayChop<byte>(buffEl.bin, 1800);
             byte[] filename = StrToByteArray(buffEl.path);
-            for(int i=0; i<imagePack.Length; i++) {
-                outMsg.Header.Size = 13 + (uint)imagePack[i].Length; // msg
+            for (int i = 0; i < imagePack.Length; i++) {
+                outMsg.Header.Size = 13 + (uint) imagePack[i].Length; // msg
                 outMsg.Header.Size += 9; // image reply struct
-                if (i==0)
-                    outMsg.Header.Size +=(uint)(filename.Length+1); // image name
-                outMsgImageReply.Flag = (i > 0) ? (byte)0x6 : (byte)0x5;
+                if (i == 0)
+                    outMsg.Header.Size += (uint) (filename.Length + 1); // image name
+                outMsgImageReply.Flag = (i > 0) ? (byte) 0x6 : (byte) 0x5;
                 ForwardData(RawSerialize(outMsg), 21 + outMsg.Message.Length);
                 ForwardData(RawSerialize(outMsgImageReply), 9);
                 if (i == 0) {
@@ -395,9 +430,5 @@ namespace HAKGERSoft {
                 ForwardData(imagePack[i]);
             }
         }
-
-
-
-
     }
 }
