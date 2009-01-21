@@ -1,24 +1,5 @@
-﻿/* GGListener.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* GGContainer.cs
+   see information in SHGG.cs file
 */
 
 using System;
@@ -216,24 +197,26 @@ namespace HAKGERSoft {
         private void NotifyReplyAction(uint packetType) {
             uint packetSize = ReadUint();
 
-            GGUser user = new GGUser();
-            user.GGNumber = (int) ReadUint() & 0xffffff;
-            user.vGGStatus = StatusDecode((uint) NetStream.ReadByte());
-            user.vIPAdress = ReadUint().ToString(); // todo
-            user.vRemotePort = (int) ReadShort();
-            user.vGGClientVersion = GGClientVersionDecode((byte) NetStream.ReadByte());
-            user.vMaxImageSize = (byte) NetStream.ReadByte();
+            if(packetSize > 0 && NetStream.DataAvailable) {
+                GGUser user = new GGUser();
+                user.GGNumber = (int) ReadUint() & 0xffffff;
+                user.vGGStatus = StatusDecode((uint) NetStream.ReadByte());
+                user.vIPAdress = ReadUint().ToString(); // todo
+                user.vRemotePort = (int) ReadShort();
+                user.vGGClientVersion = GGClientVersionDecode((byte) NetStream.ReadByte());
+                user.vMaxImageSize = (byte) NetStream.ReadByte();
 
-            NetStream.ReadByte(); // unknown
+                NetStream.ReadByte(); // unknown
 
-            if (packetSize > 14) {
-                int descSize = (packetType == IN_NOTIFY_REPLY60) ? (byte) NetStream.ReadByte() : (int) packetSize - 14;
-                byte[] desc = new byte[descSize];
-                for (int i = 0; i < descSize; i++)
-                    desc[i] = (byte) NetStream.ReadByte();
-                user.vDescription = Encoding.GetEncoding(DEFAULT_ENCODING).GetString(desc);
+                if (packetSize > 14) {
+                    int descSize = (packetType == IN_NOTIFY_REPLY60) ? (byte) NetStream.ReadByte() : (int) packetSize - 14;
+                    byte[] desc = new byte[descSize];
+                    for (int i = 0; i < descSize; i++)
+                        desc[i] = (byte) NetStream.ReadByte();
+                    user.vDescription = Encoding.GetEncoding(DEFAULT_ENCODING).GetString(desc);
+                }
+                this.Users.UserChangedHandler(user);
             }
-            this.Users.UserChangedHandler(user);
         }
 
         private void PubDirReplyAction() {
