@@ -1,6 +1,6 @@
 /* SHGG.cs
 
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
+Copyright (c) HAKGERSoft 2000 - 2009 www.hakger.xorg.pl
 
 This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
 are prohibited!
@@ -15,7 +15,7 @@ Requirements:
   .NET 3.5 (at least) to develop
  
 Version:
-  0.6 / 13.04.2008
+  0.651 / 21.01.2008
 
 Remarks:
   For questions use www.4programmers.net
