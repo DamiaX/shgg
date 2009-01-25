@@ -1,6 +1,7 @@
-sHGG - manual (do wersji  0.6 / 13.04.2008)
+sHGG - manual (do wersji  0.6x / 25.01.2009)
 -------------------------------------------
 www.hakger.xorg.pl
+http://code.google.com/p/shgg/
 
 1. Opis
 =======
@@ -11,7 +12,7 @@ sHGG to komponent do obs³ugi Gadu-gadu w jêzyku C# (œrodowisko .NET). Umo¿liwia 
 2. Licencja
 ===========
 
-Komponent jest w pe³ni darmowy - mo¿na go dowolnie u¿ywaæ, kopiowaæ, rozpowszechniaæ, powielaæ. Prosimy nie modyfikowaæ kodu Ÿród³owego.
+Komponent jest w pe³ni darmowy - mo¿na go dowolnie u¿ywaæ, kopiowaæ, rozpowszechniaæ, powielaæ. Support mile widziany (kontakt: #GG lub @email - www.hakger.xorg.pl).
 
 
 3. Manual
@@ -26,7 +27,7 @@ Aby po³¹czyæ siê z serwerem GG, wystarczy zbudowaæ obiekt sHGG, ustawiæ numer GG
   sharpGG.GGNumber = "123456"; // numer GG
   sharpGG.GGPassword = "AlaMaKota"; // has³o GG
   sharpGG.GGStatus = sHGG.GGStatusType.Available; // status na start
-  sharpGG.GGLogin(); // zalogowanie
+  sharpGG.GGLogin(sharpGG.GGGetActiveServer()); // zalogowanie
 
 Komponent znajduje siê w przestrzeni nazw HAKGERSoft, dlatego zaleca siê na pocz¹tku modu³u dodaæ deklaracjê:
 
@@ -35,8 +36,6 @@ Komponent znajduje siê w przestrzeni nazw HAKGERSoft, dlatego zaleca siê na pocz
 Aby siê wylogowaæ:
 
   sharpGG.GGLogout();
-
-Gdyby nie uda³o siê po³¹czyæ - byæ mo¿e serwer GG jest niedostêpny. Wtedy nale¿y siê pos³u¿yæ metod¹ GGGetActiveServer(), która zwraca aktualnie czynny adres serwera - przypisujemy go do w³aœciwoœci GGServerAddress.
 
 
 - status i opis GG
@@ -136,7 +135,12 @@ Usuniêcie ca³ej listy kontaktów:
 Zablokowanie osoby (ignor):
   Users.Block(123456);
 
-Osoby na liœcie kontaktów s¹ automatycznie sortowani tak jak w kliencie GG.
+Osoby na liœcie kontaktów s¹ automatycznie sortowane tak jak w kliencie GG.
+
+Aby pobraæ u¿ytkownika o danym indexie 'index': Users[(int)index]
+Aby pobraæ u¿ytkownika o danym numerze GG 'ggNum': Users[(uint)ggNum]
+Aby pobraæ u¿ytkownika o danym nicku 'nick': Users[nick]
+
 
 
 - obs³uga konta
@@ -168,20 +172,26 @@ FAQ:
 
 * "Nie mogê zbudowaæ Ÿród³a - nie mo¿e znajœæ NUnit.Framework"?
   - najwidoczniej nie posiadasz NUnit`a do testów jednostkowych. W takim przypadku usuniêcie ca³ego katalogu "Tests" oraz referencji do
-    nunit.framework za³atwi sprawê (shgg --> references)
+    nunit.framework za³atwi sprawê (shgg --> references). Usuniêcie katalogu Tests w ¿aden sposób nie zmniejszy funkcjonalnoœci biblioteki.
 
 * "Mam Visual Studio 2005 i dalej nie mogê zbudowaæ kodu (wystêpuj¹ b³êdy sk³adni)"?
   - potrzebujesz Visual Studio 2008 (na dowolnej licencji). VS2005 nie jest w stanie zbudowaæ kodu!
 
 * Kod siê ³adnie zbudowa³, ale nie uda³o mi siê nigdy po³¹czyæ"?
   Przyczyn mo¿e byæ wiele:
+  - prawdŸ czy masz najnowsz¹ wersjêbiblioteki
   - sprawdŸ jeszcze raz czy numer GG oraz has³o s¹ poprawne!
-  - sprawdŸ czy jesteœ zalogowany (na start domyœlnie ustawiany jest status niewidoczny i tak naprawde nie widzisz czy siê zalogowa³eœ - zmieñ status na dostêpny aby mieæ pewnoœæ)
+  - sprawdŸ czy jesteœ zalogowany (na start domyœlnie ustawiany jest status niewidoczny i tak naprawde nie widzisz czy siê zalogowa³eœ - zmieñ status na dostêpny aby mieæ pewnoœæ - najlepiej jeszcze przed po³¹czeniem).
   - byæ mo¿e serwer GG jest nieaktualny. W takim przypadku najlepiej logowaæ siê tak:
-
   sharpGG.GGLogin(sharpGG.GGGetActiveServer());
   (czyli po uprzednim pobraniu aktualnego adresu serwera GG)
-
+  - jeœli dalej wystêpuje jakiœ b³¹d - skontaktuj siê z nami.
+  
+* Czy mogê pomóc w budowaniu biblioteki?
+  Jak najbardziej - ka¿da pomoc mile widziana. Najlepiej skontaktowaæ siê z nami.
+  
+* Mam kilka pytañ dot. dzia³ania biblioteki - gdzie je mogê zadaæ?
+  Mo¿na u¿yæ forum.4programmers.net (dzia³ C#)
 
 -------------------------------------------------------------
-shgg. Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
+shgg. Copyright (c) HAKGERSoft 2000 - 2009 www.hakger.xorg.pl
