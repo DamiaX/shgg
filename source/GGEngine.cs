@@ -1,24 +1,7 @@
-﻿/* GGEngine.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -323,7 +306,7 @@ namespace HAKGERSoft {
             outMsgImage.Unknown = 0x109;
             outMsgImage.Size = binary.Length;
             outMsgImage.CRC32 = new CRC32().GetCrc32(new MemoryStream(binary));
-            imageBuff.pushBin2Buff(uin, new imageBuffEl() { bin = binary, path = path });
+            imageBuff.pushSave(uin, new imageBuffEl() { bin = binary, path = path });
             return outMsgImage;
         }
 
@@ -412,7 +395,7 @@ namespace HAKGERSoft {
         }
 
         private void ForwardImage(stMsg outMsg, stMsgImageReply outMsgImageReply) {
-            imageBuffEl buffEl = imageBuff.popBinFromBuff(outMsg.Recipient);
+            imageBuffEl buffEl = imageBuff.popSave(outMsg.Recipient);
             byte[][] imagePack = sHGG.ArrayChop<byte>(buffEl.bin, 1800);
             byte[] filename = StrToByteArray(buffEl.path);
             for (int i = 0; i < imagePack.Length; i++) {

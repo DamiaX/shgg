@@ -1,24 +1,7 @@
-﻿/* GGFunctions.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -33,14 +16,14 @@ namespace HAKGERSoft {
     internal sealed class BinBuffer<K, V> {
         private Dictionary<K, V> innerBuff = new Dictionary<K, V>();
 
-        internal void pushBin2Buff(K key, V val) {
+        internal void pushSave(K key, V val) {
             if (innerBuff.ContainsKey(key))
                 innerBuff[key] = val;
             else
                 innerBuff.Add(key, val);
         }
 
-        internal V popBinFromBuff(K key) {
+        internal V popSave(K key) {
             V val;
             if (!innerBuff.TryGetValue(key, out val))
                 return default(V);
@@ -52,7 +35,7 @@ namespace HAKGERSoft {
     public sealed partial class sHGG {
 
         internal static int SplitPacket(int count, int div) {
-            if (div >= count)
+            if(div >= count)
                 return -1;
             int i = count;
             while (i > 0) {

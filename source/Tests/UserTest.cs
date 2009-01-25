@@ -1,24 +1,7 @@
-﻿/* UserTest.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -52,6 +35,19 @@ namespace HAKGERSoft.Tests {
             Assert.IsNotNull(copy);
             Assert.AreEqual(copy, user);
             Assert.AreNotSame(copy, user);
+
+        }
+
+        [Test]
+        public void ImplicitConversionTest() {
+            GGUser user = 12345;
+            Assert.AreEqual(user.GGNumber, 12345);
+            int back = user;
+            Assert.AreEqual(back, 12345);
+            user = "John";
+            Assert.AreEqual(user.GGNick, "John");
+            string nick  = user;
+            Assert.AreEqual(nick, "John");
 
         }
 

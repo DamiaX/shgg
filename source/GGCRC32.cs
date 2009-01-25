@@ -1,24 +1,7 @@
-﻿/* GGCRC32.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -27,8 +10,8 @@ using System.IO;
 namespace HAKGERSoft {
  
    internal class CRC32 {      
-      private UInt32[] crc32Table;
-      private const int BUFFER_SIZE = 1024;
+      UInt32[] crc32Table;
+      const int BUFFER_SIZE = 1024;
 
       internal CRC32() {
          unchecked {

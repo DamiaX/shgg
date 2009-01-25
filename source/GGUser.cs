@@ -1,24 +1,7 @@
-﻿/* GGUser.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -145,6 +128,50 @@ namespace HAKGERSoft {
 
         internal string vGGClientVersion = string.Empty;
 
+        //ctor
+
+        public GGUser() {
+        }
+
+        public GGUser(uint ggNumber) {
+            this.GGNumber = (int)ggNumber;
+        }
+
+        public GGUser(int ggNumber) : this((uint)ggNumber) {
+        }
+
+        public GGUser(string nick) {
+            this.GGNick = nick;
+        }
+
+        public GGUser(string nick, int ggNumber) {
+            this.GGNick = nick;
+            this.GGNumber = ggNumber;
+        }
+
+        public GGUser(int ggNumber, string nick): this(nick,ggNumber) {
+        }
+
+        //operator
+
+        public static implicit operator int(GGUser m) {
+            return m.GGNumber;
+        }
+
+        public static implicit operator GGUser(int i) {
+            return new GGUser(i);
+        }
+
+        public static implicit operator string(GGUser m) {
+            return m.GGNick;
+        }
+
+        public static implicit operator GGUser(string s) {
+            return new GGUser(s);
+        }
+
+        #region IComparable Members
+
         public int CompareTo(object value) {
             if (value == null)
                 return 1;
@@ -153,15 +180,25 @@ namespace HAKGERSoft {
             return (this.GGNumber - (value as GGUser).GGNumber); // ten sam numer GG
         }
 
+        #endregion
+
+        #region ICloneable Members
+
         public object Clone() {
             return base.MemberwiseClone();
         }
+
+        #endregion
+
+        #region IEquatable<GGUser> Members
 
         public bool Equals(GGUser value) {
             if (value==null && this!=null)
                 return false;
             return (value.GGNumber == this.GGNumber); // ten sam numer GG
         }
+
+        #endregion
 
         public override bool Equals(object o) {
             if (o is GGUser && this!=null)
@@ -172,5 +209,14 @@ namespace HAKGERSoft {
         public override int GetHashCode() {
             return this.GGNumber;
         }
+
+
+
+
+
+
+
+
+        
     }
 }

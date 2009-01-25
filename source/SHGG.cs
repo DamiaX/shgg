@@ -5,27 +5,32 @@ Copyright (c) HAKGERSoft 2000 - 2009 www.hakger.xorg.pl
 This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
 are prohibited!
 
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
+Authors:
+ * DetoX [ reedi(at)poczta(dot)fm ]
+ * mlesniew
+ * Jacek Trublajewicz 'jotte' [ gothic(at)os(dot)pl ]
 
 Unit description:
-  .NET GG engine based on System.Net.Sockets.TcpClient
+  .NET GG engine based on System.Net.Sockets.TcpClient, 
 
 Requirements:
   .NET 3.5 (at least) to develop
  
 Version:
-  0.651 / 21.01.2008
+  0.652 / 25.01.2008
 
 Remarks:
   For questions use www.4programmers.net
+  Check new version at http://code.google.com/p/shgg
 */
 
 using System;
+using System.Linq;
 using System.IO;
 using System.Threading;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Net.Sockets;
 
 namespace HAKGERSoft {
 
@@ -33,14 +38,16 @@ namespace HAKGERSoft {
     /// G³ówna klasa obs³uguj¹ca silnik klienta gadu-gadu
     /// </summary>
     public sealed partial class sHGG {
+        TcpClient TcpEngine = null;
+        Thread IdleEngine, pingTimer;
+        NetworkStream NetStream;
+        SynchronizationContext Sync = SynchronizationContext.Current;
+
         internal bool mock {
             get { return this.mockObj != null; }
         }
         internal ConnectionMock mockObj;
-        private System.Net.Sockets.TcpClient TcpEngine = null;
-        private Thread IdleEngine, pingTimer;
-        private System.Net.Sockets.NetworkStream NetStream;
-        private SynchronizationContext syncContext = SynchronizationContext.Current;
+        
 
         /// <summary>
         /// Lista kontaktów
@@ -230,7 +237,7 @@ namespace HAKGERSoft {
         /// Konstruktor klasy sHGG
         /// </summary>
         public sHGG(): base() {
-            syncContext = syncContext ?? new SynchronizationContext();
+            Sync = Sync ?? new SynchronizationContext();
             this.Users = new GGUsers(this);
         }
 
