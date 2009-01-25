@@ -1,7 +1,8 @@
-﻿/* GGContainer.cs
-   see information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
-
 using System;
 using System.Text;
 using System.Threading;
@@ -14,7 +15,7 @@ namespace HAKGERSoft {
         internal void PostCallback<A>(GenericEventHandler<A> handler, A args) {
             if (handler == null)
                 return;
-            syncContext.Post(new SendOrPostCallback((state) => { handler(this, args); }), null);
+            Sync.Post(new SendOrPostCallback((state) => { handler(this, args); }), null);
         }
 
         private void FlushData(uint bytes) {

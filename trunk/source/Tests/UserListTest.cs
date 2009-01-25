@@ -1,24 +1,7 @@
-﻿/* UserListTest.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -148,6 +131,24 @@ namespace HAKGERSoft.Tests {
             Assert.AreEqual(ggMock.Users.Count, 2);
             ggMock.Users.Block(99);
             Assert.AreEqual(ggMock.Users.Count, 2);
+        }
+
+        [Test]
+        public void IndexerTest() {
+            ggMock.Users.Add(new Dictionary<string, int> { { "Paul", 333334 }, { "John", 444445 }, { "Tom", 555556 } }, true);
+            // List<T> this[int] standard, not override!
+            // dictionary has no order, impossible to test - but it works! Even so, there is sort ....
+            //Assert.AreEqual(ggMock.Users[(int)1].GGNumber, 444445);
+            //Assert.AreEqual(ggMock.Users[(int)1].GGNick, "John");
+            // this[uint ggNumber]
+            Assert.AreEqual(ggMock.Users[(uint)555556].GGNumber, 555556);
+            Assert.AreEqual(ggMock.Users[(uint)555556].GGNick, "Tom");
+            // this[string nick]
+            Assert.AreEqual(ggMock.Users["Paul"].GGNumber, 333334);
+            Assert.AreEqual(ggMock.Users["Paul"].GGNick, "Paul");
+
+            Assert.IsNotNull(ggMock.Users[(int)1]); // List<T> this[int index] test - will throw if not working
+
         }
 
 

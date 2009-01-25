@@ -1,24 +1,7 @@
-﻿/* FunctionsTest.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
@@ -167,29 +150,29 @@ namespace HAKGERSoft.Tests {
         [Test]
         public void ImageBinBuffTest() {
             BinBuffer<uint, byte[]> imageBuff = new BinBuffer<uint, byte[]>();
-            imageBuff.pushBin2Buff(1234, new byte[] { 1, 2, 3, 4 });
-            imageBuff.pushBin2Buff(5678, new byte[] { 5, 6, 7, 8 });
+            imageBuff.pushSave(1234, new byte[] { 1, 2, 3, 4 });
+            imageBuff.pushSave(5678, new byte[] { 5, 6, 7, 8 });
 
-            byte[] expectNull = imageBuff.popBinFromBuff(0000);
+            byte[] expectNull = imageBuff.popSave(0000);
             Assert.IsNull(expectNull);
-            byte[] firstArr = imageBuff.popBinFromBuff(1234);
+            byte[] firstArr = imageBuff.popSave(1234);
             Assert.IsNotNull(firstArr);
             Assert.AreEqual(firstArr.Length, 4);
             Assert.AreEqual(firstArr[3], 4);
-            byte[] firstAnother = imageBuff.popBinFromBuff(1234);
+            byte[] firstAnother = imageBuff.popSave(1234);
             Assert.IsNull(firstAnother);
-            imageBuff.pushBin2Buff(1234, new byte[] { 9 });
-            byte[] firstNew = imageBuff.popBinFromBuff(1234);
+            imageBuff.pushSave(1234, new byte[] { 9 });
+            byte[] firstNew = imageBuff.popSave(1234);
             Assert.IsNotNull(firstArr);
             Assert.AreEqual(firstNew.Length, 1);
             Assert.AreEqual(firstNew[0], 9);
-            byte[] expectNull2 = imageBuff.popBinFromBuff(1234);
+            byte[] expectNull2 = imageBuff.popSave(1234);
             Assert.IsNull(expectNull2);
-            byte[] secArr = imageBuff.popBinFromBuff(5678);
+            byte[] secArr = imageBuff.popSave(5678);
             Assert.IsNotNull(secArr);
             Assert.AreEqual(secArr.Length, 4);
             Assert.AreEqual(secArr[3], 8);
-            byte[] expectNull3 = imageBuff.popBinFromBuff(5678);
+            byte[] expectNull3 = imageBuff.popSave(5678);
             Assert.IsNull(expectNull3);
         }
 

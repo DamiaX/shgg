@@ -1,27 +1,11 @@
-﻿/* GGUsersList.cs
-
-Copyright (c) HAKGERSoft 2000 - 2008 www.hakger.xorg.pl
-
-This unit is owned by HAKGERSoft, any modifications without HAKGERSoft permission
-are prohibited!
-
-Author:
-  DetoX [ reedi(at)poczta(dot)fm ]
-
-Unit description:
-  information in SHGG.cs file
-
-Requirements:
-  information in SHGG.cs file
- 
-Version:
-  information in SHGG.cs file
-
-Remarks:
-  information in SHGG.cs file
+﻿/* 
+ * SHGG
+ * More info in SHGG.cs file 
+ * 
 */
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,15 +17,47 @@ namespace HAKGERSoft {
     /// Lista kontaktów
     /// </summary>
     public sealed class GGUsers :List<GGUser> {
-        private sHGG owner;
+        sHGG Owner;
+
+        /// <summary>
+        /// Pobiera użytkownika o danym nicku GG
+        /// </summary>
+        /// <param name="nick">nick użytkownika</param>
+        /// <returns></returns>
+        public GGUser this[string nick] {
+            get {
+                return this.First(x => x==nick);
+            }
+        }
+
+        /// <summary>
+        /// Pobiera użytkownika o danym numerze GG
+        /// </summary>
+        /// <param name="ggNumber">numer gg</param>
+        /// <returns></returns>
+        public GGUser this[uint ggNumber] {
+            get {
+                return this.First(x => x==ggNumber);
+            }
+        }
+
+        /// <summary>
+        /// Pobiera użytkownika o danym indexie na liście
+        /// </summary>
+        /// <param name="index">index</param>
+        /// <returns></returns>
+        new public GGUser this[int index] {
+            get {
+                return base[index];
+            }
+        }
 
         /// <summary>
         /// Konstruktor listy kontaktów
         /// </summary>
         /// <param name="owner">obiekt typu sHGG (właściciel listy)</param>
-        public GGUsers(sHGG owner)
-            : base() {
-            this.owner = owner;
+        internal GGUsers(sHGG owner) : base() {
+            this.Owner = owner;
         }
 
         /// <summary>
@@ -52,22 +68,17 @@ namespace HAKGERSoft {
             if (this.Contains(user))
                 return;
             base.Add(user);
-            if (owner.IsGGLogged)
-                owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, false);
+            if(Owner.IsGGLogged)
+                Owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, false);
             this.UserAddedHandler(user);
         }
 
         /// <summary>
         /// Dodaje nową osobę do listy kontaktów
         /// </summary>
-        /// <param name="GGnumber">numer GG osoby</param>
-        public void Add(int GGnumber) {
-            GGUser user = new GGUser();
-            user.GGNumber = GGnumber;
-            this.Add(user);
-            if (owner.IsGGLogged)
-                owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, false);
-            this.UserAddedHandler(user);
+        /// <param name="ggNumber">numer GG osoby</param>
+        public void Add(int ggNumber) {
+            this.Add((GGUser)ggNumber);
         }
 
         /// <summary>
@@ -78,14 +89,14 @@ namespace HAKGERSoft {
         /// któryś z numerów jest już na liście, nie doda żadnego numeru</param>
         /// <returns>zwraca TRUE jeśli uda się dodać nowe osoby</returns>
         public bool Add(Dictionary<string, int> users, bool transaction) {
-            if (users == null)
+            if(users == null)
                 return false;
             List<GGUser> transact = new List<GGUser>();
             IDictionaryEnumerator userEnum = users.GetEnumerator();
-            while (userEnum.MoveNext()) {
-                if ((this.Contains((int) userEnum.Value) || transact.Exists(x => x.GGNumber == (int) userEnum.Value)) & transaction)
+            while(userEnum.MoveNext()) {
+                if((this.Contains((int)userEnum.Value) || transact.Exists(x => x == (int)userEnum.Value)) && transaction)
                     return false; // rollback 
-                transact.Add(new GGUser() { GGNick = (string) userEnum.Key, GGNumber = (int) userEnum.Value });
+                transact.Add(new GGUser() { GGNick=(string)userEnum.Key, GGNumber=(int)userEnum.Value });
             }
             transact.ForEach(user => this.Add(user));
             return true;
@@ -98,12 +109,12 @@ namespace HAKGERSoft {
         /// <param name="transaction">transakcja gdy wartość jest równa TRUE - jeśli
         /// któryś z numerów jest już na liście, nie doda żadnego numeru</param>
         /// <returns>zwraca TRUE jeśli uda się dodać nowe osoby</returns>
-        public bool Add(int[] GGnumbers, bool transaction) {
-            if (GGnumbers == null || GGnumbers.Length == 0)
+        public bool Add(int[] ggnumbers, bool transaction) {
+            if (ggnumbers == null || ggnumbers.Length == 0)
                 return false;
             Dictionary<string, int> newUsers = new Dictionary<string, int>();
             int i = 1;
-            foreach (int number in GGnumbers)
+            foreach(int number in ggnumbers)
                 newUsers.Add("User " + i++.ToString(), number);
             return this.Add(newUsers, transaction);
         }
@@ -114,9 +125,9 @@ namespace HAKGERSoft {
         /// <param name="user">osoba na liście</param>
         /// <returns>zwraca TRUE jeśli uda się usunąć osobę</returns>
         new public bool Remove(GGUser user) {
-            if (!this.Contains(user))
+            if(!this.Contains(user))
                 return false;
-            owner.OutUsersNotify(user, sHGG.OUT_USERS_REMOVE_NOTIFY, false);
+            Owner.OutUsersNotify(user, sHGG.OUT_USERS_REMOVE_NOTIFY, false);
             bool result = base.Remove(user);
             this.ListChangedHandler();
             return result;
@@ -127,8 +138,8 @@ namespace HAKGERSoft {
         /// </summary>
         /// <param name="GGnumber">numer GG osoby</param>
         /// <returns>zwraca TRUE jeśli uda się usunąć osobę</returns>
-        public bool Remove(int GGnumber) {
-            return this.Remove(new GGUser() { GGNumber = GGnumber });
+        public bool Remove(int ggnumber) {
+            return this.Remove((GGUser)ggnumber);
         }
 
         /// <summary>
@@ -147,15 +158,15 @@ namespace HAKGERSoft {
         /// </summary>
         /// <param name="GGNumber">numer GG osoby</param>
         /// <returns>zwraca TRUE jeśli osoba znajduje się na liście</returns>
-        public bool Contains(int GGNumber) {
-            return this.Contains(new GGUser() { GGNumber = GGNumber });
+        public bool Contains(int ggNumber) {
+            return this.Contains((GGUser)ggNumber);
         }
 
         /// <summary>
         /// Usuwa wszystkie osoby z listy kontaktów 
         /// </summary>
         new public void Clear() {
-            this.ForEach(user => owner.OutUsersNotify(user, sHGG.OUT_USERS_REMOVE_NOTIFY, false));
+            this.ForEach(user => Owner.OutUsersNotify(user, sHGG.OUT_USERS_REMOVE_NOTIFY, false));
             base.Clear();
             this.ListChangedHandler();
         }
@@ -165,7 +176,7 @@ namespace HAKGERSoft {
         /// </summary>
         /// <param name="user">osoba, która ma być zablokowana</param>
         public void Block(GGUser user) {
-            owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, true);
+            Owner.OutUsersNotify(user, sHGG.OUT_USERS_ADD_NOTIFY, true);
             this.Remove(user);
             this.ListChangedHandler();
         }
@@ -174,8 +185,8 @@ namespace HAKGERSoft {
         /// Blokuje osobę
         /// </summary>
         /// <param name="GGNumber">numer GG osoby, która ma być zablokowana</param>
-        public void Block(int GGNumber) {
-            this.Block(new GGUser() { GGNumber = GGNumber });
+        public void Block(int ggNumber) {
+            this.Block((GGUser)ggNumber);
         }
 
         //public void ExportToGGServer() {
@@ -195,7 +206,6 @@ namespace HAKGERSoft {
             StreamReader sr = new StreamReader(filePath);
             try {
                 while (!sr.EndOfStream) {
-                
                     string[] input = sr.ReadLine().Split(new char[] { ';' });
                     try {
                         GGUser u = new GGUser();
@@ -211,8 +221,8 @@ namespace HAKGERSoft {
 
                         base.Add(u);
 
-                        if (owner.IsGGLogged)
-                            owner.OutUsersNotify(u, sHGG.OUT_USERS_ADD_NOTIFY, false);
+                        if (Owner.IsGGLogged)
+                            Owner.OutUsersNotify(u, sHGG.OUT_USERS_ADD_NOTIFY, false);
 
                     } catch (IndexOutOfRangeException) {
                         continue;
@@ -263,19 +273,19 @@ namespace HAKGERSoft {
                 user = item;
                 this.UsersSort();
                 UserEventArgs args = new UserEventArgs() { User = user };
-                owner.PostCallback<UserEventArgs>(UserChanged, args);
+                Owner.PostCallback<UserEventArgs>(UserChanged, args);
             }
         }
 
         internal void UserAddedHandler(GGUser user) {
             this.UsersSort();
             UserEventArgs args = new UserEventArgs() { User = user };
-            owner.PostCallback<UserEventArgs>(UserAdded, args);
+            Owner.PostCallback<UserEventArgs>(UserAdded, args);
         }
 
         internal void ListChangedHandler() {
             this.UsersSort();
-            owner.PostCallback<EventArgs>(ListChanged, EventArgs.Empty);
+            Owner.PostCallback<EventArgs>(ListChanged, EventArgs.Empty);
         }
 
         internal void UsersRestart() {
@@ -304,13 +314,13 @@ namespace HAKGERSoft {
                 return yStatusOrder - xStatusOrder;
         }
 
-        private void WriteStream(byte[] data, string path) {
+        void WriteStream(byte[] data, string path) {
             FileStream wstr = null;
             try {
                 wstr = new FileStream(path, FileMode.Create, FileAccess.Write);
                 wstr.Write(data, 0, data.Length);
             } catch {
-                this.owner.GGLogout();
+                this.Owner.GGLogout();
                 throw;
             } finally {
                 if (wstr != null)
@@ -318,7 +328,7 @@ namespace HAKGERSoft {
             }
         }
 
-        private byte[] DeserializeUserlist() {
+        byte[] DeserializeUserlist() {
             string res = string.Empty;
             foreach (GGUser user in this) {
                 res += string.Format("{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};{11};{12};\n\r",
@@ -341,6 +351,11 @@ namespace HAKGERSoft {
                 return new byte[] { };
             return Encoding.GetEncoding(sHGG.DEFAULT_ENCODING).GetBytes(res);
         }
+
+
+
+
+
 
 
 
